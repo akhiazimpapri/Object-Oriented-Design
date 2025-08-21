@@ -178,7 +178,7 @@ class TrafficModule {
 }
 
 // ===== Main App =====
-public class Main {
+public class Urban_M_S {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
