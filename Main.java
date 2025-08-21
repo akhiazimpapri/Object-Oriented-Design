@@ -1,25 +1,31 @@
 import java.util.*;
 
+// ===== Entity Classes =====
 class Citizen {
     private String name;
     private String nid;
     private int familySize;
     private double income;
+    private String location;
 
-    public Citizen(String name, String nid, int familySize, double income) {
+    public Citizen(String name, String nid, int familySize, double income, String location) {
         this.name = name;
         this.nid = nid;
         this.familySize = familySize;
         this.income = income;
+        this.location = location;
     }
 
+    // Getters
     public String getName() { return name; }
+    public String getNid() { return nid; }
     public int getFamilySize() { return familySize; }
     public double getIncome() { return income; }
+    public String getLocation() { return location; }
 
     @Override
     public String toString() {
-        return name + " (NID: " + nid + ")";
+        return name + " (NID: " + nid + ", Location: " + location + ")";
     }
 }
 
@@ -31,9 +37,9 @@ class House {
         this.address = address;
     }
 
-    public void allocateTo(Citizen citizen) {
-        this.owner = citizen;
-    }
+    public String getAddress() { return address; }
+    public Citizen getOwner() { return owner; }
+    public void setOwner(Citizen owner) { this.owner = owner; }
 
     @Override
     public String toString() {
@@ -41,80 +47,22 @@ class House {
     }
 }
 
-class HousingAuthority {
-    private List<House> houses = new ArrayList<>();
-
-    public void addHouse(House house) {
-        houses.add(house);
-    }
-
-    public void allocateHouse(Citizen citizen) {
-        for (House h : houses) {
-            if (h.toString().contains("Available")) {
-                h.allocateTo(citizen);
-                System.out.println("✅ House allocated: " + h);
-                return;
-            }
-        }
-        System.out.println("❌ No houses available!");
-    }
-
-    public void listHouses() {
-        System.out.println("🏠 Houses List:");
-        for (House h : houses) {
-            System.out.println("- " + h);
-        }
-    }
-}
-
 class GarbageBin {
     private String location;
-    private boolean isFull;
+    private boolean full;
 
     public GarbageBin(String location) {
         this.location = location;
-        this.isFull = false;
+        this.full = false;
     }
 
-    public void storeWaste() {
-        this.isFull = true;
-    }
-
-    public void emptyBin() {
-        this.isFull = false;
-    }
-
-    public boolean isFull() {
-        return isFull;
-    }
+    public String getLocation() { return location; }
+    public boolean isFull() { return full; }
+    public void setFull(boolean full) { this.full = full; }
 
     @Override
     public String toString() {
-        return location + " [Status: " + (isFull ? "FULL" : "EMPTY") + "]";
-    }
-}
-
-class GarbageManagement {
-    private List<GarbageBin> bins = new ArrayList<>();
-
-    public void addBin(GarbageBin bin) {
-        bins.add(bin);
-    }
-
-    public void assignCleanup() {
-        for (GarbageBin bin : bins) {
-            if (bin.isFull()) {
-                bin.emptyBin();
-                System.out.println("🗑 Garbage collected from: " + bin);
-            }
-        }
-    }
-
-    public void listBins() {
-        System.out.println("🗑 Garbage Bins:");
-        for (GarbageBin bin : bins) {
-            System.out.println("- " + bin);
-        }
+        return location + " [Status: " + (full ? "FULL" : "EMPTY") + "]";
     }
 }
 
@@ -127,10 +75,9 @@ class TrafficSignal {
         this.status = "RED";
     }
 
-    public void changeSignal(String status) {
-        this.status = status;
-        System.out.println("🚦 Signal at " + location + " changed to " + status);
-    }
+    public String getLocation() { return location; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
     @Override
     public String toString() {
@@ -138,11 +85,84 @@ class TrafficSignal {
     }
 }
 
-class TrafficControl {
+// ===== Module Classes =====
+class HousingModule {
+    private List<House> houses = new ArrayList<>();
+
+    public void addHouse(House house) {
+        houses.add(house);
+    }
+
+    public void allocateHouse(Citizen citizen) {
+        for (House h : houses) {
+            if (h.getOwner() == null && h.getAddress().toLowerCase().contains(citizen.getLocation().toLowerCase())) {
+                h.setOwner(citizen);
+                System.out.println("✅ House allocated: " + h);
+                return;
+            }
+        }
+        System.out.println("❌ No available houses in " + citizen.getLocation());
+    }
+
+    public void listHouses() {
+        System.out.println("🏠 Houses List:");
+        for (House h : houses) {
+            System.out.println("- " + h);
+        }
+    }
+}
+
+class GarbageModule {
+    private List<GarbageBin> bins = new ArrayList<>();
+
+    public void addBin(GarbageBin bin) {
+        bins.add(bin);
+    }
+
+    public void markBinFull(String location) {
+        for (GarbageBin bin : bins) {
+            if (bin.getLocation().equalsIgnoreCase(location)) {
+                bin.setFull(true);
+                System.out.println("🗑 Bin marked FULL: " + bin);
+                return;
+            }
+        }
+        System.out.println("❌ No bin found at location: " + location);
+    }
+
+    public void cleanupBins() {
+        for (GarbageBin bin : bins) {
+            if (bin.isFull()) {
+                bin.setFull(false);
+                System.out.println("✅ Cleaned: " + bin.getLocation());
+            }
+        }
+    }
+
+    public void listBins() {
+        System.out.println("🗑 Garbage Bins:");
+        for (GarbageBin bin : bins) {
+            System.out.println("- " + bin);
+        }
+    }
+}
+
+class TrafficModule {
     private List<TrafficSignal> signals = new ArrayList<>();
 
     public void addSignal(TrafficSignal signal) {
         signals.add(signal);
+    }
+
+    public void changeSignal(String location, String status) {
+        for (TrafficSignal s : signals) {
+            if (s.getLocation().equalsIgnoreCase(location)) {
+                s.setStatus(status);
+                System.out.println("🚦 Signal updated: " + s);
+                return;
+            }
+        }
+        System.out.println("❌ No traffic signal at: " + location);
     }
 
     public void listSignals() {
@@ -157,21 +177,27 @@ class TrafficControl {
     }
 }
 
+// ===== Main App =====
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
-        HousingAuthority housing = new HousingAuthority();
-        GarbageManagement garbage = new GarbageManagement();
-        TrafficControl traffic = new TrafficControl();
+        HousingModule housing = new HousingModule();
+        GarbageModule garbage = new GarbageModule();
+        TrafficModule traffic = new TrafficModule();
 
         // Pre-load data
         housing.addHouse(new House("Mirpur-10"));
         housing.addHouse(new House("Uttara-11"));
+        housing.addHouse(new House("Banani-Block-A"));
+
         garbage.addBin(new GarbageBin("Dhanmondi-27"));
         garbage.addBin(new GarbageBin("Banani"));
+        garbage.addBin(new GarbageBin("Mirpur"));
+
         traffic.addSignal(new TrafficSignal("Shahbagh"));
         traffic.addSignal(new TrafficSignal("Farmgate"));
+        traffic.addSignal(new TrafficSignal("Gulshan-2"));
 
         while (true) {
             System.out.println("\n===== Dhaka Urban Management System (DUMS) =====");
@@ -181,7 +207,7 @@ public class Main {
             System.out.println("0. Exit");
             System.out.print("Enter choice: ");
             int choice = sc.nextInt();
-            sc.nextLine();  // consume newline
+            sc.nextLine();
 
             switch (choice) {
                 case 1:
@@ -193,32 +219,34 @@ public class Main {
                     int famSize = sc.nextInt();
                     System.out.print("Enter Income: ");
                     double income = sc.nextDouble();
+                    sc.nextLine();
+                    System.out.print("Enter Preferred Location (Mirpur/Uttara/Banani): ");
+                    String location = sc.nextLine();
 
-                    Citizen citizen = new Citizen(name, nid, famSize, income);
+                    Citizen citizen = new Citizen(name, nid, famSize, income, location);
                     housing.allocateHouse(citizen);
                     housing.listHouses();
                     break;
 
                 case 2:
                     garbage.listBins();
-                    System.out.print("Mark a bin as full (index starting 0): ");
-                    int idx = sc.nextInt();
-                    if (idx >= 0 && idx < 2) {
-                        garbage.addBin(new GarbageBin("NewBin-" + idx)); // for demo
-                    }
-                    garbage.assignCleanup();
+                    System.out.print("Enter Bin Location to mark FULL: ");
+                    String binLocation = sc.nextLine();
+                    garbage.markBinFull(binLocation);
+                    garbage.cleanupBins();
                     garbage.listBins();
                     break;
 
                 case 3:
                     traffic.listSignals();
-                    System.out.print("Enter Signal index to change (0/1): ");
-                    int sIdx = sc.nextInt();
-                    sc.nextLine();
+                    System.out.print("Enter Signal Location: ");
+                    String sigLoc = sc.nextLine();
                     System.out.print("Enter new status (GREEN/RED): ");
                     String status = sc.nextLine();
-                    traffic.addSignal(new TrafficSignal("Custom-" + sIdx));
-                    traffic.reportAccident("Mohakhali");
+                    traffic.changeSignal(sigLoc, status);
+                    System.out.print("Enter accident location to report: ");
+                    String accLoc = sc.nextLine();
+                    traffic.reportAccident(accLoc);
                     break;
 
                 case 0:
